@@ -37,11 +37,17 @@ trait ReplicatedData {
  * Java API: Interface for implementing a [[ReplicatedData]] in
  * Java.
  */
-abstract class AbstractReplicatedData extends ReplicatedData {
-  // it is not possible to use a more strict type, because it is erased somehow, and
-  // the implementation is anyway required to implement
-  // merge(that: ReplicatedData): ReplicatedData
-  type T = AbstractReplicatedData
+abstract class AbstractReplicatedData[D <: AbstractReplicatedData[D]] extends ReplicatedData {
+
+  type T = ReplicatedData
+
+  final override def merge(that: ReplicatedData): ReplicatedData =
+    mergeData(that.asInstanceOf[D])
+
+  /**
+   * Monotonic merge function.
+   */
+  def mergeData(that: D): D
 
 }
 
@@ -52,7 +58,7 @@ abstract class AbstractReplicatedData extends ReplicatedData {
  * used by the [[Replicator]] to collapse data from the removed node
  * into some other node in the cluster.
  */
-trait RemovedNodePruning { this: ReplicatedData ⇒
+trait RemovedNodePruning extends ReplicatedData {
 
   /**
    * Does it have any state changes from a specific node,
